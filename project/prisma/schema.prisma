@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String              @id @default(cuid())
+  email             String              @unique
+  password          String
+  name              String?
+  preferences       UserPreferences?
+  mealPlans         MealPlan[]
+  scannedProducts   ScannedProduct[]
+  achievements      UserAchievement[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model UserPreferences {
+  id                String              @id @default(cuid())
+  userId            String              @unique
+  user              User                @relation(fields: [userId], references: [id])
+  dietType          String              @default("balanced")
+  mealsPerDay       Int                 @default(3)
+  restrictions      String              @default("{}") // JSON string of dietary restrictions
+  ethicalPreferences String             @default("{}") // JSON string of ethical preferences
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model Product {
+  id                String              @id @default(cuid())
+  barcode           String              @unique
+  name              String
+  brand             String?
+  ethicalScore      Float
+  certifications    String              // JSON array of certifications
+  nutritionFacts    String              // JSON object of nutrition facts
+  ingredients       String              // JSON array of ingredients
+  sustainabilityInfo String?
+  scannedProducts   ScannedProduct[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model ScannedProduct {
+  id                String              @id @default(cuid())
+  userId            String
+  productId         String
+  user              User                @relation(fields: [userId], references: [id])
+  product           Product             @relation(fields: [productId], references: [id])
+  scannedAt         DateTime            @default(now())
+}
+
+model Recipe {
+  id                String              @id @default(cuid())
+  name              String
+  servings          Int
+  ingredients       String              // JSON array of ingredients
+  instructions      String              // JSON array of instructions
+  prepTime          Int
+  cookTime          Int
+  calories          Int
+  protein           Float
+  carbs             Float
+  fat               Float
+  ethicalScore      Float
+  tags              String              // JSON array of tags
+  image             String?
+  mealPlans         MealPlan[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model MealPlan {
+  id                String              @id @default(cuid())
+  userId            String
+  recipeId          String
+  date              DateTime
+  mealType          String
+  servings          Int
+  user              User                @relation(fields: [userId], references: [id])
+  recipe            Recipe              @relation(fields: [recipeId], references: [id])
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model Achievement {
+  id                String              @id @default(cuid())
+  title             String
+  description       String
+  icon              String
+  requiredProgress  Int
+  type              String
+  userAchievements  UserAchievement[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model UserAchievement {
+  id                String              @id @default(cuid())
+  userId            String
+  achievementId     String
+  progress          Int                 @default(0)
+  completed         Boolean             @default(false)
+  completedAt       DateTime?
+  user              User                @relation(fields: [userId], references: [id])
+  achievement       Achievement         @relation(fields: [achievementId], references: [id])
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@unique([userId, achievementId])
+}
